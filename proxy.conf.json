@@ -1,0 +1,7 @@
+{
+  "/autenticacao": {
+    "target": "https://casasoftchamado.casasoftsig.net.br",
+    "secure": true,
+    "changeOrigin": true
+  }
+}

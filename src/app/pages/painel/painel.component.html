@@ -1,0 +1,207 @@
+<section class="painel container">
+  <header class="top card card--hover">
+    <h2 class="title">Painel de Chamados</h2>
+    <div class="actions">
+      <button class="btn" type="button" (click)="abrirCriar()">Criar Chamado</button>
+      <button class="btn btn--primary" type="button" (click)="refresh()">Atualizar agora</button>
+    </div>
+  </header>
+
+  <section class="filtros card">
+    <form class="grid" (ngSubmit)="aplicarFiltro()">
+      <div class="input">
+        <label>Título</label>
+        <input [(ngModel)]="filtroTitulo" name="titulo" placeholder="Buscar por título" />
+      </div>
+      <div class="input">
+        <label>Descrição</label>
+        <input [(ngModel)]="filtroDescricao" name="descricao" placeholder="Buscar por descrição" />
+      </div>
+      <div class="filtros__actions">
+        <button type="submit" class="btn btn--primary">Filtrar</button>
+        <button type="button" class="btn btn--ghost" (click)="limparFiltro()">Limpar</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="lista card">
+    <table *ngIf="itensFiltrados.length; else vazio">
+      <thead>
+        <tr>
+          <th style="width:80px">ID</th>
+          <th>Título</th>
+          <th class="col-descricao">Descrição</th>
+          <th style="width:130px">Status</th>
+          <th style="width:190px">Cadastro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of itensFiltrados" class="row-clickable" tabindex="0" role="button"
+          (click)="abrirDetalhe(c.id)" (keydown)="onRowKeydown($event, c.id)"
+          aria-label="Abrir detalhes do chamado {{ c.id }}">
+          <td>{{ c.id }}</td>
+          <td>
+            <div class="descricao-cell" [matTooltip]="c.titulo" matTooltipPosition="above" matTooltipShowDelay="300">
+              {{ c.titulo }}
+            </div>
+          </td>
+          <td class="col-descricao">
+            <div class="descricao-cell" [matTooltip]="c.descricao" matTooltipPosition="above" matTooltipShowDelay="300">
+              {{ c.descricao }}
+            </div>
+          </td>
+          <td>{{ c.status }}</td>
+          <td>{{ c.dataCadastro | date:'dd/MM/yyyy HH:mm' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #vazio>
+      <div class="vazio">Nenhum chamado encontrado.</div>
+    </ng-template>
+  </section>
+
+  <footer class="paginacao card" *ngIf="total > 0">
+    <div class="paginacao__info">{{ faixaTexto }}</div>
+
+    <div class="paginacao__controles">
+      <button class="btn" [disabled]="pagina <= 1" (click)="anterior()">Anterior</button>
+
+      <button class="btn" *ngFor="let p of paginasParaMostrar" [class.btn--primary]="p === pagina" (click)="irPara(p)">
+        {{ p }}
+      </button>
+
+      <button class="btn" [disabled]="pagina >= paginaFinal" (click)="proxima()">Próxima</button>
+
+      <select [ngModel]="tamanho" (ngModelChange)="trocarTamanho($event)">
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="20">20</option>
+        <option [ngValue]="50">50</option>
+      </select>
+    </div>
+  </footer>
+
+  <div class="modal-backdrop" *ngIf="abrirModalCriar">
+    <div class="modal card">
+      <header class="modal__top">
+        <h3>Novo Chamado</h3>
+        <button class="icon-btn" type="button" (click)="fecharCriar()">✕</button>
+      </header>
+
+      <form class="form" (ngSubmit)="criarChamado()" #formCriar="ngForm">
+        <div class="input">
+          <label for="titulo">Título</label>
+          <input id="titulo" name="titulo" [(ngModel)]="novoTitulo" required placeholder="Título do chamado" />
+        </div>
+
+        <div class="input">
+          <label for="descricao">Descrição</label>
+          <textarea id="descricao" name="descricao" [(ngModel)]="novaDescricao" required
+            placeholder="Descreva o chamado" rows="3" maxlength="250"></textarea>
+          <div class="char-counter">
+            {{ novaDescricao.length || 0 }}/250
+          </div>
+        </div>
+
+        <div class="modal__actions">
+          <button class="btn btn--secondary" type="button" (click)="fecharCriar()">Cancelar</button>
+          <button class="btn btn--primary" type="submit" [disabled]="formCriar.invalid || salvando">
+            {{ salvando ? 'Salvando...' : 'Criar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="detalheAberto">
+    <div class="modal modal--sm card">
+      <header class="modal__top">
+        <h3>Detalhes do Chamado</h3>
+        <button class="icon-btn" type="button" (click)="fecharDetalhe()" aria-label="Fechar">✕</button>
+      </header>
+      <div class="detalhe__loading" *ngIf="detalheLoading">
+        <div class="skeleton skeleton--title"></div>
+        <div class="skeleton skeleton--line"></div>
+        <div class="skeleton skeleton--line"></div>
+      </div>
+      <div class="detalhe__erro" *ngIf="!detalheLoading && detalheErro">
+        {{ detalheErro }}
+      </div>
+      <ng-container *ngIf="!detalheLoading && detalhe">
+        <div class="detalhe__conteudo" *ngIf="!editando">
+          <div class="campo">
+            <span class="lbl">ID</span>
+            <span class="val">#{{ detalhe.id }}</span>
+          </div>
+          <div class="campo">
+            <span class="lbl">Título</span>
+            <span class="val">{{ detalhe.titulo }}</span>
+          </div>
+          <div class="campo">
+            <span class="lbl">Descrição</span>
+            <span class="val">{{ detalhe.descricao }}</span>
+          </div>
+          <div class="campo">
+            <span class="lbl">Status</span>
+            <span class="val">
+              <span class="tag" [class.tag--open]="detalhe.status === 'ABERTO'"
+                [class.tag--closed]="detalhe.status === 'FECHADO'">
+                {{ detalhe.status }}
+              </span>
+            </span>
+          </div>
+          <div class="campo">
+            <span class="lbl">Cadastro</span>
+            <span class="val">
+              {{ detalhe.dataCadastro | date:'dd/MM/yyyy HH:mm' }}
+            </span>
+          </div>
+        </div>
+        <form class="detalhe__edicao" *ngIf="editando" (ngSubmit)="salvarEdicao()">
+          <div class="input">
+            <label>Título</label>
+            <input [(ngModel)]="editTitulo" name="editTitulo" required />
+          </div>
+          <div class="input">
+            <label>Descrição</label>
+            <textarea id="editDescricao" name="editDescricao" [(ngModel)]="editDescricao" required
+              placeholder="Edite a Descrição" rows="3" maxlength="250"></textarea>
+            <div class="char-counter">
+              {{ editDescricao.length || 0 }}/250
+            </div>
+          </div>
+        </form>
+
+        <div class="modal__actions">
+          <ng-container *ngIf="!editando">
+            <div class="left-actions">
+              <button class="btn" type="button" (click)="iniciarEdicao()">
+                Editar
+              </button>
+            </div>
+            <div class="right-actions">
+              <button class="btn btn--danger" type="button" (click)="excluir()" [disabled]="excluindo">
+                {{ excluindo ? 'Excluindo...' : 'Excluir' }}
+              </button>
+
+              <button class="btn btn--primary" type="button" (click)="fecharDetalhe()">
+                Fechar
+              </button>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="editando">
+            <div class="edit-actions">
+              <button class="btn btn--secondary" type="button" (click)="cancelarEdicao()" [disabled]="salvandoEdicao">
+                Cancelar
+              </button>
+
+              <button class="btn btn--primary" type="button" (click)="salvarEdicao()" [disabled]="salvandoEdicao">
+                {{ salvandoEdicao ? 'Salvando...' : 'Salvar' }}
+              </button>
+            </div>
+          </ng-container>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</section>
