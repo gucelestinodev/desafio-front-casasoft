@@ -33,8 +33,27 @@ export class PainelComponent implements OnInit, OnDestroy {
   novaDescricao = '';
   salvando = false;
 
+  detalheAberto = false;
+  detalheLoading = false;
+  detalheErro: string | null = null;
+  detalhe: Chamado | null = null;
+
+  editando = false;
+  editTitulo = '';
+  editDescricao = '';
+  salvandoEdicao = false;
+
+  excluindo = false;
+
   async ngOnInit() {
+    if (!isPlatformBrowser(this.platformId)) {
+      this.itens = [];
+      this.total = 0;
+      return;
+    }
+
     await this.chamados.pesquisar(1, this.tamanho);
+
     this.sub = this.chamados.state$.subscribe(s => {
       this.itens = s.itens;
       this.pagina = s.pagina;
@@ -42,17 +61,20 @@ export class PainelComponent implements OnInit, OnDestroy {
       this.total = s.total;
     });
 
-    if (isPlatformBrowser(this.platformId)) {
-      try {
-        const token = localStorage.getItem('token') || undefined;
-        await this.signal.start(token);
-      } catch {}
-    }
+    try {
+      const token = localStorage.getItem('token') || undefined;
+      await this.signal.start(token);
+    } catch { }
   }
 
   ngOnDestroy() {
     this.sub?.unsubscribe();
     this.signal.stop();
+  }
+
+  aplicarFiltro() {
+    this.filtroTitulo = (this.filtroTitulo ?? '').trim();
+    this.filtroDescricao = (this.filtroDescricao ?? '').trim();
   }
 
   limparFiltro() {
@@ -68,7 +90,7 @@ export class PainelComponent implements OnInit, OnDestroy {
       const tit = (c.titulo ?? '').toLowerCase();
       const des = (c.descricao ?? '').toLowerCase();
       const okTitulo = !t || tit.includes(t);
-      const okDesc   = !d || des.includes(d);
+      const okDesc = !d || des.includes(d);
       return okTitulo && okDesc;
     });
   }
@@ -96,7 +118,7 @@ export class PainelComponent implements OnInit, OnDestroy {
     for (let p = ini; p <= fim; p++) arr.push(p);
     if (!arr.includes(1)) arr.unshift(1);
     if (!arr.includes(total)) arr.push(total);
-    return Array.from(new Set(arr)).sort((a,b) => a-b);
+    return Array.from(new Set(arr)).sort((a, b) => a - b);
   }
 
   abrirCriar() {
@@ -122,6 +144,79 @@ export class PainelComponent implements OnInit, OnDestroy {
       await this.chamados.refresh();
     } finally {
       this.salvando = false;
+    }
+  }
+
+  async abrirDetalhe(id: number) {
+    this.detalheAberto = true;
+    this.editando = false;
+    this.detalheLoading = true;
+    this.detalheErro = null;
+    this.detalhe = null;
+    try {
+      this.detalhe = await this.chamados.obterPorId(id);
+      this.editTitulo = this.detalhe.titulo ?? '';
+      this.editDescricao = this.detalhe.descricao ?? '';
+    } catch {
+      this.detalheErro = 'Não foi possível carregar os detalhes do chamado.';
+    } finally {
+      this.detalheLoading = false;
+    }
+  }
+
+  fecharDetalhe() {
+    this.detalheAberto = false;
+    this.detalhe = null;
+    this.detalheErro = null;
+  }
+
+  iniciarEdicao() {
+    if (!this.detalhe) return;
+    this.editTitulo = this.detalhe.titulo ?? '';
+    this.editDescricao = this.detalhe.descricao ?? '';
+    this.editando = true;
+  }
+
+  cancelarEdicao() {
+    this.editando = false;
+  }
+
+  async salvarEdicao() {
+    if (!this.detalhe) return;
+    this.salvandoEdicao = true;
+    try {
+      await this.chamados.atualizarChamado(this.detalhe.id, {
+        titulo: this.editTitulo.trim(),
+        descricao: this.editDescricao.trim(),
+      });
+      this.detalhe = await this.chamados.obterPorId(this.detalhe.id);
+      await this.chamados.refresh();
+      this.editando = false;
+    } finally {
+      this.salvandoEdicao = false;
+    }
+  }
+
+
+  async excluir() {
+    if (!this.detalhe) return;
+    const ok = confirm(`Confirma excluir o chamado #${this.detalhe.id}?`);
+    if (!ok) return;
+
+    this.excluindo = true;
+    try {
+      await this.chamados.excluirChamado(this.detalhe.id);
+      await this.chamados.refresh();
+      this.fecharDetalhe();
+    } finally {
+      this.excluindo = false;
+    }
+  }
+
+  onRowKeydown(ev: KeyboardEvent, id: number) {
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      ev.preventDefault();
+      this.abrirDetalhe(id);
     }
   }
 }

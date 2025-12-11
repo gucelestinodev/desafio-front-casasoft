@@ -7,7 +7,6 @@
     </div>
   </header>
 
-  <!-- filtros (agora só filtram localmente) -->
   <section class="filtros card">
     <form class="grid" (ngSubmit)="aplicarFiltro()">
       <div class="input">
@@ -25,7 +24,6 @@
     </form>
   </section>
 
-  <!-- Tabela (usa itensFiltrados) -->
   <section class="lista card">
     <table *ngIf="itensFiltrados.length; else vazio">
       <thead>
@@ -38,7 +36,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let c of itensFiltrados">
+        <tr *ngFor="let c of itensFiltrados" class="row-clickable" tabindex="0" role="button"
+          (click)="abrirDetalhe(c.id)" (keydown)="onRowKeydown($event, c.id)"
+          aria-label="Abrir detalhes do chamado {{ c.id }}">
           <td>{{ c.id }}</td>
           <td>{{ c.titulo }}</td>
           <td>{{ c.descricao }}</td>
@@ -53,18 +53,13 @@
     </ng-template>
   </section>
 
-  <!-- Paginação (continua server-side; filtros são só locais) -->
   <footer class="paginacao card" *ngIf="total > 0">
     <div class="paginacao__info">{{ faixaTexto }}</div>
 
     <div class="paginacao__controles">
       <button class="btn" [disabled]="pagina <= 1" (click)="anterior()">Anterior</button>
 
-      <button
-        class="btn"
-        *ngFor="let p of paginasParaMostrar"
-        [class.btn--primary]="p === pagina"
-        (click)="irPara(p)">
+      <button class="btn" *ngFor="let p of paginasParaMostrar" [class.btn--primary]="p === pagina" (click)="irPara(p)">
         {{ p }}
       </button>
 
@@ -78,7 +73,6 @@
     </div>
   </footer>
 
-  <!-- Modal Criar Chamado -->
   <div class="modal-backdrop" *ngIf="abrirModalCriar">
     <div class="modal card">
       <header class="modal__top">
@@ -94,7 +88,8 @@
 
         <div class="input">
           <label for="descricao">Descrição</label>
-          <input id="descricao" name="descricao" [(ngModel)]="novaDescricao" required placeholder="Descreva o chamado" />
+          <input id="descricao" name="descricao" [(ngModel)]="novaDescricao" required
+            placeholder="Descreva o chamado" />
         </div>
 
         <div class="modal__actions">
@@ -104,6 +99,94 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="detalheAberto">
+    <div class="modal modal--sm card">
+      <header class="modal__top">
+        <h3>Detalhes do Chamado</h3>
+        <button class="icon-btn" type="button" (click)="fecharDetalhe()" aria-label="Fechar">✕</button>
+      </header>
+      <div class="detalhe__loading" *ngIf="detalheLoading">
+        <div class="skeleton skeleton--title"></div>
+        <div class="skeleton skeleton--line"></div>
+        <div class="skeleton skeleton--line"></div>
+      </div>
+      <div class="detalhe__erro" *ngIf="!detalheLoading && detalheErro">
+        {{ detalheErro }}
+      </div>
+      <ng-container *ngIf="!detalheLoading && detalhe">
+        <div class="detalhe__conteudo" *ngIf="!editando">
+          <div class="campo">
+            <span class="lbl">ID</span>
+            <span class="val">#{{ detalhe.id }}</span>
+          </div>
+          <div class="campo">
+            <span class="lbl">Título</span>
+            <span class="val">{{ detalhe.titulo }}</span>
+          </div>
+          <div class="campo">
+            <span class="lbl">Descrição</span>
+            <span class="val">{{ detalhe.descricao }}</span>
+          </div>
+          <div class="campo">
+            <span class="lbl">Status</span>
+            <span class="val">
+              <span class="tag" [class.tag--open]="detalhe.status === 'ABERTO'"
+                [class.tag--closed]="detalhe.status === 'FECHADO'">
+                {{ detalhe.status }}
+              </span>
+            </span>
+          </div>
+          <div class="campo">
+            <span class="lbl">Cadastro</span>
+            <span class="val">
+              {{ detalhe.dataCadastro | date:'dd/MM/yyyy HH:mm' }}
+            </span>
+          </div>
+        </div>
+        <form class="detalhe__edicao" *ngIf="editando" (ngSubmit)="salvarEdicao()">
+          <div class="input">
+            <label>Título</label>
+            <input [(ngModel)]="editTitulo" name="editTitulo" required />
+          </div>
+          <div class="input">
+            <label>Descrição</label>
+            <input [(ngModel)]="editDescricao" name="editDescricao" required />
+          </div>
+        </form>
+
+        <div class="modal__actions">
+          <ng-container *ngIf="!editando">
+            <div class="left-actions">
+              <button class="btn" type="button" (click)="iniciarEdicao()">
+                Editar
+              </button>
+            </div>
+            <div class="right-actions">
+              <button class="btn btn--danger" type="button" (click)="excluir()" [disabled]="excluindo">
+                {{ excluindo ? 'Excluindo...' : 'Excluir' }}
+              </button>
+
+              <button class="btn btn--primary" type="button" (click)="fecharDetalhe()">
+                Fechar
+              </button>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="editando">
+            <div class="edit-actions">
+              <button class="btn btn--secondary" type="button" (click)="cancelarEdicao()" [disabled]="salvandoEdicao">
+                Cancelar
+              </button>
+
+              <button class="btn btn--primary" type="button" (click)="salvarEdicao()" [disabled]="salvandoEdicao">
+                {{ salvandoEdicao ? 'Salvando...' : 'Salvar' }}
+              </button>
+            </div>
+          </ng-container>
+        </div>
+      </ng-container>
     </div>
   </div>
 </section>
