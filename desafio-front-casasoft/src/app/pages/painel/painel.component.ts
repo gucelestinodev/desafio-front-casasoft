@@ -6,10 +6,16 @@ import { ChamadoService, Chamado } from '../../services/chamado.service';
 import { SignalRService } from '../../services/signalr.service';
 import { Subscription } from 'rxjs';
 
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 @Component({
   standalone: true,
   selector: 'app-painel',
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatSnackBarModule,
+  ],
   templateUrl: './painel.component.html',
   styleUrls: ['./painel.component.scss'],
 })
@@ -17,6 +23,9 @@ export class PainelComponent implements OnInit, OnDestroy {
   private chamados = inject(ChamadoService);
   private signal = inject(SignalRService);
   private platformId: object = inject(PLATFORM_ID);
+
+  // 👇 serviço do snackbar
+  private snackBar = inject(MatSnackBar);
 
   sub?: Subscription;
 
@@ -45,6 +54,10 @@ export class PainelComponent implements OnInit, OnDestroy {
 
   excluindo = false;
 
+  autoAtualizado = false;
+  private autoUpdateSub?: Subscription;
+  private autoUpdateTimeout?: any;
+
   async ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) {
       this.itens = [];
@@ -61,6 +74,10 @@ export class PainelComponent implements OnInit, OnDestroy {
       this.total = s.total;
     });
 
+    this.autoUpdateSub = this.chamados.autoUpdate$.subscribe(() => {
+      this.mostrarSnackAtualizado();
+    });
+
     try {
       const token = localStorage.getItem('token') || undefined;
       await this.signal.start(token);
@@ -69,8 +86,26 @@ export class PainelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.sub?.unsubscribe();
+    this.autoUpdateSub?.unsubscribe();
+    if (this.autoUpdateTimeout) {
+      clearTimeout(this.autoUpdateTimeout);
+    }
     this.signal.stop();
   }
+
+  private mostrarSnackAtualizado() {
+    this.snackBar.open(
+      'Sua listagem foi atualizada automaticamente. Verifique o novo chamado.',
+      'OK',
+      {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['snack-auto-update'],
+      }
+    );
+  }
+
 
   aplicarFiltro() {
     this.filtroTitulo = (this.filtroTitulo ?? '').trim();
@@ -196,7 +231,6 @@ export class PainelComponent implements OnInit, OnDestroy {
       this.salvandoEdicao = false;
     }
   }
-
 
   async excluir() {
     if (!this.detalhe) return;

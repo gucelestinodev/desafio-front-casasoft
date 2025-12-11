@@ -1,7 +1,7 @@
 import { Injectable, NgZone, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { BehaviorSubject, firstValueFrom, Subject } from 'rxjs'; // <-- Subject aqui
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
@@ -12,6 +12,7 @@ export interface Chamado {
   status: string;
   dataCadastro: string;
 }
+
 export interface PesquisaState {
   itens: Chamado[];
   pagina: number;
@@ -25,7 +26,7 @@ export interface PesquisaState {
 export class ChamadoService {
   private platformId = inject(PLATFORM_ID);
 
-  private readonly LIST_URL = `${environment.CHAMADO_BASE}/api/v1/chamados/pesquisa`;
+  private readonly LIST_URL   = `${environment.CHAMADO_BASE}/api/v1/chamados/pesquisa`;
   private readonly CREATE_URL = `${environment.CHAMADO_BASE}/api/v1/chamados`;
   private readonly DETAIL_URL = `${environment.CHAMADO_BASE}/api/v1/chamados`;
 
@@ -36,12 +37,20 @@ export class ChamadoService {
   public readonly state$ = this._state$.asObservable();
   public readonly itens$ = this.state$.pipe(map((s) => s.itens));
 
-  constructor(private http: HttpClient, private zone: NgZone) { }
+  private _autoUpdate$ = new Subject<void>();
+  public readonly autoUpdate$ = this._autoUpdate$.asObservable();
 
-  async refresh() {
+  constructor(private http: HttpClient, private zone: NgZone) {}
+
+  async refresh(origem: 'manual' | 'signalr' = 'manual') {
     if (!isPlatformBrowser(this.platformId)) return;
+
     const s = this._state$.value;
     await this.pesquisar(s.pagina, s.tamanho, s.titulo ?? undefined, s.descricao ?? undefined);
+
+    if (origem === 'signalr') {
+      this._autoUpdate$.next();
+    }
   }
 
   async pesquisar(pagina = 1, maximo = 10, titulo?: string, descricao?: string) {
@@ -76,7 +85,7 @@ export class ChamadoService {
     return this.pesquisar(1, s.tamanho ?? 10, s.titulo ?? undefined, s.descricao ?? undefined);
   }
 
-  async atualizarPesquisa() { return this.refresh(); }
+  async atualizarPesquisa() { return this.refresh('manual'); }
 
   async paginaAnterior() {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -126,31 +135,21 @@ export class ChamadoService {
 
   async atualizarChamado(
     id: number,
-    input: { titulo: string; descricao: string }
+    input: { titulo: string; descricao: string; dataCadastro?: string }
   ) {
     const body = {
       titulo: input.titulo,
       descricao: input.descricao,
-      status: 'ABERTO',                 
-      dataCadastro: new Date().toISOString(), 
+      status: 'ABERTO' as const,
+      dataCadastro: new Date().toISOString(),
     };
 
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      Accept: 'text/plain',
-    });
-
     const resp = await firstValueFrom(
-      this.http.put<{ data: Partial<Chamado> }>(
-        `${this.DETAIL_URL}/${id}`,
-        body,
-        { headers }
-      )
+      this.http.put<{ data: Partial<Chamado> }>(`${this.DETAIL_URL}/${id}`, body)
     );
 
     return resp?.data;
   }
-
 
   async excluirChamado(id: number) {
     const resp = await firstValueFrom(this.http.delete<{ data: boolean }>(`${this.DETAIL_URL}/${id}`));

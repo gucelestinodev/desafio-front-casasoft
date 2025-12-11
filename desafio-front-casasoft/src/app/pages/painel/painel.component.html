@@ -88,8 +88,8 @@
 
         <div class="input">
           <label for="descricao">Descrição</label>
-          <input id="descricao" name="descricao" [(ngModel)]="novaDescricao" required
-            placeholder="Descreva o chamado" />
+          <textarea id="descricao" name="descricao" [(ngModel)]="novaDescricao" required
+            placeholder="Descreva o chamado" rows="3"></textarea>
         </div>
 
         <div class="modal__actions">
@@ -153,7 +153,8 @@
           </div>
           <div class="input">
             <label>Descrição</label>
-            <input [(ngModel)]="editDescricao" name="editDescricao" required />
+            <textarea id="editDescricao" name="editDescricao" [(ngModel)]="editDescricao" required
+              placeholder="Edite a Descrição" rows="3"></textarea>
           </div>
         </form>
 

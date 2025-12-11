@@ -307,3 +307,28 @@ select {
 .btn--danger:hover {
   filter: brightness(1.1);
 }
+
+.snack-auto-update {
+  background: #16a34a;
+  color: #f9fafb;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.input textarea {
+  width: 100%;
+  min-height: 80px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, .08);
+  padding: 8px 10px;
+  resize: vertical;
+  font: inherit;
+}
+
+.input textarea:focus {
+  outline: none;
+  border-color: rgba(59,130,246,.7);
+  box-shadow: 0 0 0 1px rgba(59,130,246,.35);
+}

@@ -29,13 +29,12 @@ export class SignalRService {
     this.hub.keepAliveIntervalInMilliseconds = 15_000;
 
 
-    this.hub.on('BroadcastMessage', async (payload: any) => {
-      await this.chamados.refresh();
+    this.hub.on('BroadcastMessage', async () => {
+      await this.chamados.refresh('signalr');
     });
 
-    this.hub.onreconnected(async (connId) => {
-      console.info('[SignalR] reconectado', connId);
-      await this.chamados.refresh();
+    this.hub.onreconnected(async () => {
+      await this.chamados.refresh('signalr');
     });
 
     this.hub.onclose(err => {
