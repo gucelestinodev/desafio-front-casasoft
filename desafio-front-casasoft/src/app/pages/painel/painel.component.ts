@@ -5,8 +5,9 @@ import { PLATFORM_ID } from '@angular/core';
 import { ChamadoService, Chamado } from '../../services/chamado.service';
 import { SignalRService } from '../../services/signalr.service';
 import { Subscription } from 'rxjs';
-
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { SnackbarService } from '../../services/snackbar.service';
 
 @Component({
   standalone: true,
@@ -15,6 +16,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
     CommonModule,
     FormsModule,
     MatSnackBarModule,
+    MatTooltipModule
   ],
   templateUrl: './painel.component.html',
   styleUrls: ['./painel.component.scss'],
@@ -23,8 +25,8 @@ export class PainelComponent implements OnInit, OnDestroy {
   private chamados = inject(ChamadoService);
   private signal = inject(SignalRService);
   private platformId: object = inject(PLATFORM_ID);
+  private snackbar = inject(SnackbarService);
 
-  // 👇 serviço do snackbar
   private snackBar = inject(MatSnackBar);
 
   sub?: Subscription;
@@ -99,9 +101,9 @@ export class PainelComponent implements OnInit, OnDestroy {
       'OK',
       {
         duration: 3000,
+        panelClass: ['snack-info'],
         horizontalPosition: 'center',
         verticalPosition: 'bottom',
-        panelClass: ['snack-auto-update'],
       }
     );
   }
@@ -130,11 +132,30 @@ export class PainelComponent implements OnInit, OnDestroy {
     });
   }
 
-  refresh() { this.chamados.refresh(); }
-  anterior() { this.chamados.paginaAnterior(); }
-  proxima() { this.chamados.proximaPagina(); }
-  irPara(p: number) { this.chamados.irParaPagina(p); }
-  trocarTamanho(t: number) { this.chamados.mudarTamanho(t); }
+  refresh() {
+    this.chamados.suprimirProximaAtualizacaoAutomatica();
+    this.chamados.refresh();
+  }
+
+  anterior() {
+    this.chamados.suprimirProximaAtualizacaoAutomatica();
+    this.chamados.paginaAnterior();
+  }
+
+  proxima() {
+    this.chamados.suprimirProximaAtualizacaoAutomatica();
+    this.chamados.proximaPagina();
+  }
+
+  irPara(p: number) {
+    this.chamados.suprimirProximaAtualizacaoAutomatica();
+    this.chamados.irParaPagina(p);
+  }
+
+  trocarTamanho(t: number) {
+    this.chamados.suprimirProximaAtualizacaoAutomatica();
+    this.chamados.mudarTamanho(t);
+  }
 
   get paginaFinal() { return Math.max(1, Math.ceil(this.total / this.tamanho)); }
   get faixaTexto() {
@@ -170,13 +191,22 @@ export class PainelComponent implements OnInit, OnDestroy {
   async criarChamado() {
     if (!this.novoTitulo.trim() || !this.novaDescricao.trim()) return;
     this.salvando = true;
+
     try {
+      this.chamados.suprimirProximaAtualizacaoAutomatica();
+
       await this.chamados.criarChamado({
         titulo: this.novoTitulo.trim(),
-        descricao: this.novaDescricao.trim(),
+        descricao: this.novaDescricao.trim()
       });
+
+      this.snackbar.sucesso('Chamado criado com sucesso!');
+
       this.fecharCriar();
       await this.chamados.refresh();
+
+    } catch (e) {
+      this.snackbar.erro('Erro ao criar chamado.');
     } finally {
       this.salvando = false;
     }
@@ -220,13 +250,20 @@ export class PainelComponent implements OnInit, OnDestroy {
     if (!this.detalhe) return;
     this.salvandoEdicao = true;
     try {
+      this.chamados.suprimirProximaAtualizacaoAutomatica();
+
       await this.chamados.atualizarChamado(this.detalhe.id, {
         titulo: this.editTitulo.trim(),
-        descricao: this.editDescricao.trim(),
+        descricao: this.editDescricao.trim()
       });
-      this.detalhe = await this.chamados.obterPorId(this.detalhe.id);
+
+      this.snackbar.sucesso('Chamado atualizado com sucesso!');
+
       await this.chamados.refresh();
       this.editando = false;
+
+    } catch {
+      this.snackbar.erro('Erro ao atualizar chamado.');
     } finally {
       this.salvandoEdicao = false;
     }
@@ -239,9 +276,16 @@ export class PainelComponent implements OnInit, OnDestroy {
 
     this.excluindo = true;
     try {
+      this.chamados.suprimirProximaAtualizacaoAutomatica();
+
       await this.chamados.excluirChamado(this.detalhe.id);
+      this.snackbar.sucesso('Chamado excluído com sucesso!');
+
       await this.chamados.refresh();
       this.fecharDetalhe();
+
+    } catch {
+      this.snackbar.erro('Erro ao excluir chamado.');
     } finally {
       this.excluindo = false;
     }

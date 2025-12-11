@@ -26,7 +26,7 @@ export interface PesquisaState {
 export class ChamadoService {
   private platformId = inject(PLATFORM_ID);
 
-  private readonly LIST_URL   = `${environment.CHAMADO_BASE}/api/v1/chamados/pesquisa`;
+  private readonly LIST_URL = `${environment.CHAMADO_BASE}/api/v1/chamados/pesquisa`;
   private readonly CREATE_URL = `${environment.CHAMADO_BASE}/api/v1/chamados`;
   private readonly DETAIL_URL = `${environment.CHAMADO_BASE}/api/v1/chamados`;
 
@@ -40,15 +40,31 @@ export class ChamadoService {
   private _autoUpdate$ = new Subject<void>();
   public readonly autoUpdate$ = this._autoUpdate$.asObservable();
 
-  constructor(private http: HttpClient, private zone: NgZone) {}
+  private suprimirProximaAutoUpdate = false;
+
+  constructor(private http: HttpClient, private zone: NgZone) { }
+
+  public suprimirProximaAtualizacaoAutomatica() {
+    this.suprimirProximaAutoUpdate = true;
+  }
 
   async refresh(origem: 'manual' | 'signalr' = 'manual') {
     if (!isPlatformBrowser(this.platformId)) return;
 
     const s = this._state$.value;
-    await this.pesquisar(s.pagina, s.tamanho, s.titulo ?? undefined, s.descricao ?? undefined);
+    await this.pesquisar(
+      s.pagina,
+      s.tamanho,
+      s.titulo ?? undefined,
+      s.descricao ?? undefined
+    );
 
     if (origem === 'signalr') {
+      if (this.suprimirProximaAutoUpdate) {
+        this.suprimirProximaAutoUpdate = false;
+        return;
+      }
+
       this._autoUpdate$.next();
     }
   }

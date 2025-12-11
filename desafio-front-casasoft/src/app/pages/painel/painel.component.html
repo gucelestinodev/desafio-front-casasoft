@@ -30,7 +30,7 @@
         <tr>
           <th style="width:80px">ID</th>
           <th>Título</th>
-          <th>Descrição</th>
+          <th class="col-descricao">Descrição</th>
           <th style="width:130px">Status</th>
           <th style="width:190px">Cadastro</th>
         </tr>
@@ -40,8 +40,16 @@
           (click)="abrirDetalhe(c.id)" (keydown)="onRowKeydown($event, c.id)"
           aria-label="Abrir detalhes do chamado {{ c.id }}">
           <td>{{ c.id }}</td>
-          <td>{{ c.titulo }}</td>
-          <td>{{ c.descricao }}</td>
+          <td>
+            <div class="descricao-cell" [matTooltip]="c.titulo" matTooltipPosition="above" matTooltipShowDelay="300">
+              {{ c.titulo }}
+            </div>
+          </td>
+          <td class="col-descricao">
+            <div class="descricao-cell" [matTooltip]="c.descricao" matTooltipPosition="above" matTooltipShowDelay="300">
+              {{ c.descricao }}
+            </div>
+          </td>
           <td>{{ c.status }}</td>
           <td>{{ c.dataCadastro | date:'dd/MM/yyyy HH:mm' }}</td>
         </tr>
@@ -89,7 +97,10 @@
         <div class="input">
           <label for="descricao">Descrição</label>
           <textarea id="descricao" name="descricao" [(ngModel)]="novaDescricao" required
-            placeholder="Descreva o chamado" rows="3"></textarea>
+            placeholder="Descreva o chamado" rows="3" maxlength="250"></textarea>
+          <div class="char-counter">
+            {{ novaDescricao.length || 0 }}/250
+          </div>
         </div>
 
         <div class="modal__actions">
@@ -154,7 +165,10 @@
           <div class="input">
             <label>Descrição</label>
             <textarea id="editDescricao" name="editDescricao" [(ngModel)]="editDescricao" required
-              placeholder="Edite a Descrição" rows="3"></textarea>
+              placeholder="Edite a Descrição" rows="3" maxlength="250"></textarea>
+            <div class="char-counter">
+              {{ editDescricao.length || 0 }}/250
+            </div>
           </div>
         </form>
 

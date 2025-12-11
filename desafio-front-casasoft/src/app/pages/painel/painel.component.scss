@@ -45,6 +45,7 @@
 .lista table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .lista th,
@@ -164,14 +165,21 @@ select {
 
 .detalhe__conteudo {
   display: grid;
-  gap: 10px;
+  gap: 0;
+  margin-bottom: 12px;
 }
 
 .campo {
   display: grid;
   grid-template-columns: 140px 1fr;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+.campo:last-child {
+  border-bottom: none;
 }
 
 .lbl {
@@ -331,4 +339,22 @@ select {
   outline: none;
   border-color: rgba(59,130,246,.7);
   box-shadow: 0 0 0 1px rgba(59,130,246,.35);
+}
+
+.char-counter {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.col-descricao {
+  width: 460px;
+}
+
+.descricao-cell {
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
