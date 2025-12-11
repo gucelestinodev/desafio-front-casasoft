@@ -1,0 +1,109 @@
+<section class="painel container">
+  <header class="top card card--hover">
+    <h2 class="title">Painel de Chamados</h2>
+    <div class="actions">
+      <button class="btn" type="button" (click)="abrirCriar()">Criar Chamado</button>
+      <button class="btn btn--primary" type="button" (click)="refresh()">Atualizar agora</button>
+    </div>
+  </header>
+
+  <!-- filtros (agora só filtram localmente) -->
+  <section class="filtros card">
+    <form class="grid" (ngSubmit)="aplicarFiltro()">
+      <div class="input">
+        <label>Título</label>
+        <input [(ngModel)]="filtroTitulo" name="titulo" placeholder="Buscar por título" />
+      </div>
+      <div class="input">
+        <label>Descrição</label>
+        <input [(ngModel)]="filtroDescricao" name="descricao" placeholder="Buscar por descrição" />
+      </div>
+      <div class="filtros__actions">
+        <button type="submit" class="btn btn--primary">Filtrar</button>
+        <button type="button" class="btn btn--ghost" (click)="limparFiltro()">Limpar</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Tabela (usa itensFiltrados) -->
+  <section class="lista card">
+    <table *ngIf="itensFiltrados.length; else vazio">
+      <thead>
+        <tr>
+          <th style="width:80px">ID</th>
+          <th>Título</th>
+          <th>Descrição</th>
+          <th style="width:130px">Status</th>
+          <th style="width:190px">Cadastro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of itensFiltrados">
+          <td>{{ c.id }}</td>
+          <td>{{ c.titulo }}</td>
+          <td>{{ c.descricao }}</td>
+          <td>{{ c.status }}</td>
+          <td>{{ c.dataCadastro | date:'dd/MM/yyyy HH:mm' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #vazio>
+      <div class="vazio">Nenhum chamado encontrado.</div>
+    </ng-template>
+  </section>
+
+  <!-- Paginação (continua server-side; filtros são só locais) -->
+  <footer class="paginacao card" *ngIf="total > 0">
+    <div class="paginacao__info">{{ faixaTexto }}</div>
+
+    <div class="paginacao__controles">
+      <button class="btn" [disabled]="pagina <= 1" (click)="anterior()">Anterior</button>
+
+      <button
+        class="btn"
+        *ngFor="let p of paginasParaMostrar"
+        [class.btn--primary]="p === pagina"
+        (click)="irPara(p)">
+        {{ p }}
+      </button>
+
+      <button class="btn" [disabled]="pagina >= paginaFinal" (click)="proxima()">Próxima</button>
+
+      <select [ngModel]="tamanho" (ngModelChange)="trocarTamanho($event)">
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="20">20</option>
+        <option [ngValue]="50">50</option>
+      </select>
+    </div>
+  </footer>
+
+  <!-- Modal Criar Chamado -->
+  <div class="modal-backdrop" *ngIf="abrirModalCriar">
+    <div class="modal card">
+      <header class="modal__top">
+        <h3>Novo Chamado</h3>
+        <button class="icon-btn" type="button" (click)="fecharCriar()">✕</button>
+      </header>
+
+      <form class="form" (ngSubmit)="criarChamado()" #formCriar="ngForm">
+        <div class="input">
+          <label for="titulo">Título</label>
+          <input id="titulo" name="titulo" [(ngModel)]="novoTitulo" required placeholder="Título do chamado" />
+        </div>
+
+        <div class="input">
+          <label for="descricao">Descrição</label>
+          <input id="descricao" name="descricao" [(ngModel)]="novaDescricao" required placeholder="Descreva o chamado" />
+        </div>
+
+        <div class="modal__actions">
+          <button class="btn btn--secondary" type="button" (click)="fecharCriar()">Cancelar</button>
+          <button class="btn btn--primary" type="submit" [disabled]="formCriar.invalid || salvando">
+            {{ salvando ? 'Salvando...' : 'Criar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

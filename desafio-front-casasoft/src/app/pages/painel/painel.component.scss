@@ -1,0 +1,61 @@
+.painel { display: grid; gap: var(--gap-lg); padding: 24px 0; }
+
+.card {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+.top {
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.title { margin: 0; }
+
+.filtros .grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--gap);
+  align-items: end;
+}
+.filtros .input:nth-child(1) { grid-column: span 5; }
+.filtros .input:nth-child(2) { grid-column: span 5; }
+.filtros__actions { grid-column: span 2; display: flex; gap: 8px; }
+
+.lista table { width: 100%; border-collapse: collapse; }
+.lista th, .lista td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.lista th { text-align: left; color: var(--muted); font-weight: 600; }
+
+.vazio { padding: 24px; color: var(--muted); }
+
+.paginacao {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.paginacao__controles { display: flex; align-items: center; gap: 8px; }
+select {
+  height: 38px; border-radius: 10px;
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid rgba(255,255,255,.08); padding: 0 10px;
+}
+
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  display: grid; place-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  width: min(520px, 92vw);
+  padding: 16px;
+}
+
+.modal__top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.modal__actions {
+  display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;
+}

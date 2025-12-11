@@ -1,0 +1,39 @@
+<section class="auth">
+  <div class="card auth-card">
+    <h2 class="auth-title">Login</h2>
+
+    <form class="form" (ngSubmit)="login()" #loginForm="ngForm">
+      <div class="input">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="nome@exemplo.com"
+          name="email"
+          [(ngModel)]="email"
+          required
+        />
+      </div>
+      <div class="input input--with-error">
+        <label for="password">Senha</label>
+        <input
+          id="password"
+          type="password"
+          placeholder="********"
+          name="password"
+          [(ngModel)]="password"
+          required
+        />
+
+        <div class="error-tooltip" *ngIf="loginError">
+          Usuário ou Senha Incorreta
+        </div>
+      </div>
+      <div class="auth-actions">
+        <button class="btn btn--primary" type="submit" [disabled]="loginForm.invalid">
+          Entrar
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
